@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\Auth\AdminAuthController;
 use App\Http\Controllers\Api\Auth\CustomerAuthController;
 use App\Http\Controllers\Api\Auth\DeliveryAuthController;
@@ -48,6 +49,13 @@ Route::middleware(['auth:sanctum','isDelivery'])->group(function () {
 });
 
 
+Route::apiResource('/products',ProductController::class)->only('index','show');
+
+
+Route::middleware(['auth:sanctum','permission:create products'])->group(function(){
+    Route::apiResource('/products',ProductController::class)->except('index','show');
+
+    });
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');

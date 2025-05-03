@@ -17,6 +17,6 @@ class AddCustomHeader
     {
         $header = $next($request);
         $header->headers->set('X-Lang', 'AR');
-        return $header;
+return $header;
     }
 }
