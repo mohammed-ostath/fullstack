@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -14,7 +17,9 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $product = Product::first();
+        $products = Cache::remember('products', 300, function () {
+            return Product::with('categories')->get();
+        });
 
         // $products = Product::all();
         // $products = Product::withoutGlobalScope('active')->get();
@@ -31,6 +36,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+
         // validate the request
 
         $data = $request->validate([
@@ -40,9 +46,24 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'integer|min:0',
             'sku' => 'required|string|max:255|unique:products',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'categories' => 'array',
+            'categories.*' => 'exists:categories,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+        // check if image is uploaded
+        if ($request->hasFile('image')){
+            $data['image'] = $request->file('image')->storeAs('products',$data['slug'] ,'public');
+        }
+
         $product = Product::create($data);
+        // attach categories
+        if (isset($data['categories'])) {
+            $product->categories()->attach($data['categories']);
+        }
+        $product->load('categories');
+          //clear the cache
+        Cache::forget('products');
         return response()->json([
             'success' => true,
             'message' => "Product Added Successfully",
@@ -55,6 +76,9 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+         $productCached = Cache::remember('product_' . $product->id, 300, function () use ($product)  {
+            return $product::load('categories');
+        });
         return response()->json([
             'success' => true,
             'message' => "Product Showed Successfully",
@@ -74,8 +98,12 @@ class ProductController extends Controller
             'price' => 'sometimes|required|numeric|min:0',
             'stock' => 'sometimes|integer|min:0',
             'sku' => 'sometimes|required|string|max:255|unique:products' . $product->id,
-            'is_active' => 'sometimes|boolean'
+            'is_active' => 'sometimes|boolean',
+            'categories' => 'sometimes|array',
+            'categories.*' => 'sometimes|exists:categories,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
         if($request->has('name')){
             $product->name = $request->name;
             $product->slug = Str::slug($request->name, '-');
@@ -100,8 +128,21 @@ class ProductController extends Controller
         if($request->has('is_active')){
             $product->is_active = $request->is_active;
         }
+        // check if image is uploaded
+        if ($request->hasFile('image')){
+            $product->image = $request->file('image')->storeAs('products',$product->slug ,'public');
+        }
 
         $product->save();
+
+        if ($request->has('categories')) {
+            $product->categories()->sync($request->categories);
+        }
+        $product->load('categories');
+         //clear the cache
+        Cache::forget('product_' . $product->id);
+
+        Cache::forget('products');
         return response()->json([
             'success' => true,
             'message' => "Product updated Successfully",
@@ -115,6 +156,12 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        //check if product has image delete it from storage
+        if($product->image){
+            Storage::disk('public')->delete($product->image);
+        }
+        Cache::forget('product_' . $product->id);
+        Cache::forget('products');
         $product->delete();
         return response()->json([
             'success' => true,

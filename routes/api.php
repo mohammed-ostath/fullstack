@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\Auth\AdminAuthController;
 use App\Http\Controllers\Api\Auth\CustomerAuthController;
@@ -54,8 +55,17 @@ Route::apiResource('/products',ProductController::class)->only('index','show');
 
 Route::middleware(['auth:sanctum','permission:create products'])->group(function(){
     Route::apiResource('/products',ProductController::class)->except('index','show');
-
     });
+Route::apiResource('/categories',CategoryController::class)->only('index','show');
+
+
+Route::middleware(['auth:sanctum','permission:create categories'])->group(function(){
+    Route::apiResource('/categories',CategoryController::class)->except('index','show');
+    });
+
+Route::get('/categories/{category}/products', [CategoryController::class, 'products'])->name('categories.products');
+
+
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
