@@ -5,9 +5,10 @@ use App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\Auth\AdminAuthController;
 use App\Http\Controllers\Api\Auth\CustomerAuthController;
 use App\Http\Controllers\Api\Auth\DeliveryAuthController;
@@ -61,6 +62,10 @@ Route::apiResource('/categories',CategoryController::class)->only('index','show'
 
 Route::middleware(['auth:sanctum','permission:create categories'])->group(function(){
     Route::apiResource('/categories',CategoryController::class)->except('index','show');
+    });
+
+Route::middleware(['auth:sanctum','permission:create orders'])->group(function(){
+    Route::apiResource('/cart',CartController::class)->except('show');
     });
 
 Route::get('/categories/{category}/products', [CategoryController::class, 'products'])->name('categories.products');
