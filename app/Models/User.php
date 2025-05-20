@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Role;
+use App\Models\Order;
 use App\Models\Profile;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
@@ -80,5 +81,9 @@ class User extends Authenticatable
     public function isDelivery()
     {
         return $this->type === 'delivery';
+    }
+    // orders
+    public function orders(){
+        return $this->hasMany(Order::class);
     }
 }
