@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CheckoutController;
 use App\Models\User;
 use App\Http\Controllers;
 use Illuminate\Http\Request;
@@ -69,6 +70,13 @@ Route::middleware(['auth:sanctum','permission:create orders'])->group(function()
     });
 
 Route::get('/categories/{category}/products', [CategoryController::class, 'products'])->name('categories.products');
+
+
+Route::middleware(['auth:sanctum','permission:create orders'])->group(function(){
+    Route::post('/checkout', [CheckoutController::class,'checkout']);
+    Route::get('/orders', [CheckoutController::class,'orderHistory']);
+    Route::get('/orders/{orderId}', [CheckoutController::class,'orderDetails']);
+});
 
 
 // Route::get('/user', function (Request $request) {
